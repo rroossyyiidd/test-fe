@@ -6,7 +6,7 @@
  * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
  */
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 type Product = {
   id: number;
@@ -35,17 +35,13 @@ export default function Page() {
   }>({});
 
   const removeFromCart = (product: Product) => {
-    setCart(cart.filter((p) => p.id !== product.id));
+    setCart((prevCart) => prevCart.filter((p) => p.id !== product.id));
+    setQuantities((prevQuantities) => {
+      const newQuantities = { ...prevQuantities };
+      delete newQuantities[product.id];
+      return newQuantities;
+    });
   };
-
-  useEffect(() => {
-    setQuantities(
-      cart.reduce(
-        (acc, product) => ({ ...acc, [product.id]: product.quantity }),
-        {},
-      ),
-    );
-  }, [cart]);
 
   const totalPrice = cart
     .reduce(
@@ -54,6 +50,14 @@ export default function Page() {
     )
     .toFixed(2);
 
+    const handleAddToCart = (data: CartItem) => {
+      setCart([...cart, data]);
+      setQuantities((prevQuantities) => ({
+        ...prevQuantities,
+        [data.id]: data.quantity,
+      }));
+    };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {PRODUCTS.map((product) => (
@@ -61,7 +65,7 @@ export default function Page() {
           key={product.id}
           {...product}
           isAddedToCart={cart.findIndex((p) => p.id === product.id) >= 0}
-          onAddToCart={(data) => setCart([...cart, data])}
+          onAddToCart={handleAddToCart}
         />
       ))}
       {cart.length > 0 && (
